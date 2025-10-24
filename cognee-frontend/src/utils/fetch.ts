@@ -11,10 +11,28 @@ const cloudApiUrl = process.env.NEXT_PUBLIC_CLOUD_API_URL || "http://localhost:8
 
 const mcpApiUrl = process.env.NEXT_PUBLIC_MCP_API_URL || "http://localhost:8001";
 
+// Initialize apiKey from environment or localStorage
+// Note: During SSR, localStorage is not available, so we check on client-side
 let apiKey: string | null = process.env.NEXT_PUBLIC_COGWIT_API_KEY || null;
 let accessToken: string | null = null;
 
+// Client-side initialization: Load from localStorage after hydration
+if (typeof window !== 'undefined') {
+  const storedKey = localStorage.getItem('cognee_api_key');
+  if (storedKey && !apiKey) {
+    apiKey = storedKey;
+  }
+}
+
 export default async function fetch(url: string, options: RequestInit = {}, useCloud = false): Promise<Response> {
+  // Validate API key for cloud requests
+  if (useCloud && (!isCloudEnvironment() || !accessToken) && !apiKey) {
+    return Promise.reject({
+      detail: 'Cloud API key is required. Please connect to cloud cognee first.',
+      status: 401
+    });
+  }
+
   function retry(lastError: Response) {
     if (!isAuth0Enabled) {
       return Promise.reject(lastError);
@@ -38,8 +56,14 @@ export default async function fetch(url: string, options: RequestInit = {}, useC
     "Authorization": `Bearer ${accessToken}`,
   }
 
+  // Special handling for cloud API:
+  // - /health endpoint is at root level (no /api prefix)
+  // - Other endpoints use /api but not /v1
+  const apiPrefix = useCloud && url === "/health" ? "" : "/api";
+  const processedUrl = useCloud ? url.replace("/v1", "") : url;
+
   return global.fetch(
-    (useCloud ? cloudApiUrl : backendApiUrl) + "/api" + (useCloud ? url.replace("/v1", "") : url),
+    (useCloud ? cloudApiUrl : backendApiUrl) + apiPrefix + processedUrl,
     {
       ...options,
       headers: {
@@ -100,6 +124,18 @@ fetch.checkMCPHealth = () => {
 
 fetch.setApiKey = (newApiKey: string) => {
   apiKey = newApiKey;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('cognee_api_key', newApiKey);
+    console.log('[Cognee] API key saved to localStorage');
+  }
+};
+
+fetch.getApiKey = () => {
+  return apiKey;
+};
+
+fetch.isApiKeyFromEnv = () => {
+  return !!process.env.NEXT_PUBLIC_COGWIT_API_KEY;
 };
 
 fetch.setAccessToken = (newAccessToken: string) => {

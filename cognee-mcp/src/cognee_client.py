@@ -49,7 +49,13 @@ class CogneeClient:
         """Get headers for API requests."""
         headers = {"Content-Type": "application/json"}
         if self.api_token:
-            headers["Authorization"] = f"Bearer {self.api_token}"
+            # Auto-detect authentication type based on URL
+            if self.api_url and "api.cognee.ai" in self.api_url:
+                # Cogwit Cloud uses X-Api-Key authentication
+                headers["X-Api-Key"] = self.api_token
+            else:
+                # Local/self-hosted instances use Bearer token
+                headers["Authorization"] = f"Bearer {self.api_token}"
         return headers
 
     async def add(
@@ -82,11 +88,21 @@ class CogneeClient:
             if node_set is not None:
                 form_data["node_set"] = json.dumps(node_set)
 
+            # Build authentication headers (no Content-Type for multipart/form-data)
+            auth_headers = {}
+            if self.api_token:
+                if self.api_url and "api.cognee.ai" in self.api_url:
+                    # Cogwit Cloud uses X-Api-Key authentication
+                    auth_headers["X-Api-Key"] = self.api_token
+                else:
+                    # Local/self-hosted instances use Bearer token
+                    auth_headers["Authorization"] = f"Bearer {self.api_token}"
+
             response = await self.client.post(
                 endpoint,
                 files=files,
                 data=form_data,
-                headers={"Authorization": f"Bearer {self.api_token}"} if self.api_token else {},
+                headers=auth_headers,
             )
             response.raise_for_status()
             return response.json()
