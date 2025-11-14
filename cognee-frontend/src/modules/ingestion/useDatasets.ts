@@ -3,12 +3,22 @@ import { useCallback, useState } from 'react';
 import { fetch } from '@/utils';
 import { DataFile } from './useData';
 import createDataset from "../datasets/createDataset";
+import type { APIDataset, DatasetStatus } from '@/types/api';
 
 export interface Dataset {
   id: string;
   name: string;
   data?: DataFile[];
-  status?: string;
+  status?: DatasetStatus;
+}
+
+// Helper to convert API response to internal Dataset type
+function toDataset(apiDataset: APIDataset): Dataset {
+  return {
+    id: apiDataset.id,
+    name: apiDataset.name,
+    status: apiDataset.status,
+  };
 }
 
 function useDatasets(useCloud = false) {

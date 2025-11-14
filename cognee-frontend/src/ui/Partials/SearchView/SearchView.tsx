@@ -1,7 +1,7 @@
 "use client";
 
 import classNames from "classnames";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { LoadingIndicator } from "@/ui/App";
 import { CTAButton, Select, TextArea, Input } from "@/ui/elements";
@@ -9,6 +9,50 @@ import useChat from "@/modules/chat/hooks/useChat";
 import useDatasets from "@/modules/ingestion/useDatasets";
 
 import styles from "./SearchView.module.css";
+
+// Search form state management
+interface SearchFormState {
+  searchInputValue: string;
+  topK: number;
+  useCombinedContext: boolean;
+  onlyContext: boolean;
+  nodeFilter: string;
+}
+
+type SearchFormAction =
+  | { type: 'SET_SEARCH_INPUT'; payload: string }
+  | { type: 'SET_TOP_K'; payload: number }
+  | { type: 'TOGGLE_COMBINED_CONTEXT' }
+  | { type: 'TOGGLE_ONLY_CONTEXT' }
+  | { type: 'SET_NODE_FILTER'; payload: string }
+  | { type: 'RESET_FORM' };
+
+const initialFormState: SearchFormState = {
+  searchInputValue: '',
+  topK: 10,
+  useCombinedContext: false,
+  onlyContext: false,
+  nodeFilter: '',
+};
+
+function searchFormReducer(state: SearchFormState, action: SearchFormAction): SearchFormState {
+  switch (action.type) {
+    case 'SET_SEARCH_INPUT':
+      return { ...state, searchInputValue: action.payload };
+    case 'SET_TOP_K':
+      return { ...state, topK: action.payload };
+    case 'TOGGLE_COMBINED_CONTEXT':
+      return { ...state, useCombinedContext: !state.useCombinedContext };
+    case 'TOGGLE_ONLY_CONTEXT':
+      return { ...state, onlyContext: !state.onlyContext };
+    case 'SET_NODE_FILTER':
+      return { ...state, nodeFilter: action.payload };
+    case 'RESET_FORM':
+      return initialFormState;
+    default:
+      return state;
+  }
+}
 
 interface SelectOption {
   value: string;
@@ -74,14 +118,11 @@ export default function SearchView() {
     }
   }, [datasets, selectedDatasetId]);
 
-  const [searchInputValue, setSearchInputValue] = useState("");
-  const [topK, setTopK] = useState(10);
-  const [useCombinedContext, setUseCombinedContext] = useState(false);
-  const [onlyContext, setOnlyContext] = useState(false);
-  const [nodeFilter, setNodeFilter] = useState("");
+  const [formState, dispatch] = useReducer(searchFormReducer, initialFormState);
+  const { searchInputValue, topK, useCombinedContext, onlyContext, nodeFilter } = formState;
 
   const handleSearchInputChange = useCallback((value: string) => {
-    setSearchInputValue(value);
+    dispatch({ type: 'SET_SEARCH_INPUT', payload: value });
   }, []);
 
   // Add handler for top_k input
@@ -90,7 +131,7 @@ export default function SearchView() {
     if (isNaN(value)) value = 10;
     if (value < 1) value = 1;
     if (value > 100) value = 100;
-    setTopK(value);
+    dispatch({ type: 'SET_TOP_K', payload: value });
   }, []);
 
   const handleChatMessageSubmit = useCallback((event: React.FormEvent<SearchFormPayload>) => {
@@ -107,8 +148,9 @@ export default function SearchView() {
 
     scrollToBottom();
 
-    setSearchInputValue("");
-    
+    // Reset search input after submission
+    dispatch({ type: 'SET_SEARCH_INPUT', payload: '' });
+
     // Pass topK to sendMessage
     const datasetSelection = datasets.find((dataset) => dataset.id === selectedDatasetId) || selectedDataset;
 
@@ -214,7 +256,7 @@ export default function SearchView() {
                 <input
                   type="checkbox"
                   checked={useCombinedContext}
-                  onChange={(event) => setUseCombinedContext(event.target.checked)}
+                  onChange={() => dispatch({ type: 'TOGGLE_COMBINED_CONTEXT' })}
                 />
                 combined context
               </label>
@@ -222,7 +264,7 @@ export default function SearchView() {
                 <input
                   type="checkbox"
                   checked={onlyContext}
-                  onChange={(event) => setOnlyContext(event.target.checked)}
+                  onChange={() => dispatch({ type: 'TOGGLE_ONLY_CONTEXT' })}
                 />
                 context only
               </label>
@@ -233,7 +275,7 @@ export default function SearchView() {
                   name="nodeFilter"
                   placeholder="comma-separated node sets"
                   value={nodeFilter}
-                  onChange={(event) => setNodeFilter(event.target.value)}
+                  onChange={(event) => dispatch({ type: 'SET_NODE_FILTER', payload: event.target.value })}
                   className="w-64"
                 />
               </div>
