@@ -7,10 +7,32 @@ tools
 assets
 notebooks
 cognee-frontend
+cognee-starter-kit
+distributed
+examples
+DOCS
 
 .dlt
 .venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.DS_Store
 .github
+.git
 
 .idea
 .vscode
+
+# Explicitly exclude cognee-mcp build artifacts
+cognee-mcp/.venv
+cognee-mcp/__pycache__
+cognee-mcp/.pytest_cache
+cognee-mcp/.DS_Store
+cognee-mcp/test-docker.sh
+cognee-mcp/Dockerfile.optimized
+cognee-mcp/Dockerfile.backup
+cognee-mcp/entrypoint.optimized.sh
+cognee-mcp/*.md
+!cognee-mcp/README.md
