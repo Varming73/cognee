@@ -58,7 +58,7 @@ export default function AddDataToCognee({ datasets, refreshDatasets, useCloud = 
             id: dataset_id,
             name: dataset_name,
             data: [],  // not important, just to mimick Dataset
-            status: "",  // not important, just to mimick Dataset
+            status: undefined,  // not important, just to mimick Dataset
           },
           useCloud,
         )
