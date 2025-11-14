@@ -152,6 +152,36 @@ jobs:
       - name: Docker Hub image verification
         run: |
           echo "Verifying image availability on Docker Hub..."
-          sleep 10
-          docker pull ${{ env.DOCKERHUB_REPO }}:${{ steps.meta.outputs.sha }}
-          echo "Image verified successfully!"
+          echo "Waiting for image to propagate..."
+
+          MAX_RETRIES=6
+          RETRY_COUNT=0
+          SLEEP_TIME=10
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: Pulling ${{ env.DOCKERHUB_REPO }}:${{ steps.meta.outputs.version }}"
+
+            if docker pull ${{ env.DOCKERHUB_REPO }}:${{ steps.meta.outputs.version }}; then
+              echo "Image verified successfully!"
+
+              # Get image size
+              IMAGE_SIZE=$(docker images ${{ env.DOCKERHUB_REPO }}:${{ steps.meta.outputs.version }} --format "{{.Size}}")
+              echo "Image size: $IMAGE_SIZE"
+
+              # Add to summary
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Image Size" >> $GITHUB_STEP_SUMMARY
+              echo "**Size:** $IMAGE_SIZE" >> $GITHUB_STEP_SUMMARY
+
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "Pull failed. Waiting ${SLEEP_TIME}s before retry..."
+              sleep $SLEEP_TIME
+            fi
+          done
+
+          echo "Failed to verify image after $MAX_RETRIES attempts"
+          exit 1
