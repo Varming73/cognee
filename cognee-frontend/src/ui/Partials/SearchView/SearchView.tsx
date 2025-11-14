@@ -66,7 +66,7 @@ interface SearchFormPayload extends HTMLFormElement {
 const MAIN_DATASET = {
   id: "",
   data: [],
-  status: "",
+  status: undefined,
   name: "main_dataset",
 };
 
