@@ -128,18 +128,33 @@ docker-compose --profile ui up frontend
 
 ## Environment Variables
 
-### Build-time Variables
+### Build-time Variables (Baked into JavaScript bundle)
+
+**IMPORTANT:** Next.js `NEXT_PUBLIC_*` variables are build-time only. They cannot be changed after the image is built.
 
 - `NODE_ENV` - Set to 'production' for optimized builds
 - `NEXT_TELEMETRY_DISABLED` - Disables Next.js telemetry (set to 1)
+- `NEXT_PUBLIC_BACKEND_API_URL` - Backend API URL (default: http://localhost:8000)
+- `NEXT_PUBLIC_MCP_API_URL` - MCP server URL (default: http://localhost:8001)
+- `NEXT_PUBLIC_CLOUD_API_URL` - Cloud API URL (default: http://localhost:8001)
 
-### Runtime Variables
+### Runtime Variables (Can be set when running container)
 
-- `NEXT_PUBLIC_BACKEND_API_URL` - Backend API URL (required)
 - `PORT` - Application port (default: 3000)
-- Additional Auth0 variables (see .env.template)
 
-### Using .env Files
+### Setting Build-time Variables
+
+**Option 1: Using --build-arg (Recommended)**
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_BACKEND_API_URL=http://192.168.1.170:8000 \
+  --build-arg NEXT_PUBLIC_MCP_API_URL=http://192.168.1.171:8001 \
+  -t cognee-frontend:latest \
+  .
+```
+
+**Option 2: Using .env file**
 
 ```bash
 # Create .env file from template
@@ -148,8 +163,15 @@ cp .env.template .env
 # Edit with your values
 nano .env
 
-# Run with env file
-docker run -p 3000:3000 --env-file .env cognee-frontend:latest
+# Build (Next.js will read .env during build)
+docker build -t cognee-frontend:latest .
+```
+
+**Option 3: Using environment variables**
+
+```bash
+export NEXT_PUBLIC_BACKEND_API_URL=http://192.168.1.170:8000
+docker build -t cognee-frontend:latest .
 ```
 
 ## Health Checks

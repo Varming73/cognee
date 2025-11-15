@@ -51,14 +51,17 @@ The frontend includes a production-optimized, multi-stage Docker build with secu
 # Pull from Docker Hub (if available)
 docker pull lvarming/cognee-frontend:latest
 
-# Or build locally
-docker build -t cognee-frontend:latest .
+# Or build locally with your backend URL (required at build time)
+docker build \
+  --build-arg NEXT_PUBLIC_BACKEND_API_URL=http://your-backend:8000 \
+  -t cognee-frontend:latest \
+  .
 
 # Run the container
-docker run -p 3000:3000 \
-  -e NEXT_PUBLIC_BACKEND_API_URL=http://localhost:8000/api \
-  cognee-frontend:latest
+docker run -p 3000:3000 cognee-frontend:latest
 ```
+
+**Important:** `NEXT_PUBLIC_BACKEND_API_URL` must be set at **build time** using `--build-arg`, not at runtime with `-e`.
 
 #### Using Docker Compose
 

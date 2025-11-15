@@ -5,35 +5,44 @@
 ### Build
 
 ```bash
-# Production build
+# Production build (with backend URL - REQUIRED)
+docker build \
+  --build-arg NEXT_PUBLIC_BACKEND_API_URL=http://your-backend:8000 \
+  -t cognee-frontend:latest \
+  .
+
+# Production build (default localhost - testing only)
 docker build -t cognee-frontend:latest .
 
 # Development build
 docker build -f Dockerfile.dev -t cognee-frontend:dev .
 
 # Build without cache
-docker build --no-cache -t cognee-frontend:latest .
+docker build --no-cache \
+  --build-arg NEXT_PUBLIC_BACKEND_API_URL=http://your-backend:8000 \
+  -t cognee-frontend:latest \
+  .
 
 # Build with verbose output
-docker build --progress=plain -t cognee-frontend:latest .
+docker build --progress=plain \
+  --build-arg NEXT_PUBLIC_BACKEND_API_URL=http://your-backend:8000 \
+  -t cognee-frontend:latest \
+  .
 ```
+
+**Important:** Backend URL must be set at BUILD time, not runtime!
 
 ### Run
 
 ```bash
-# Production (basic)
+# Production (basic - URL was set during build)
 docker run -p 3000:3000 cognee-frontend:latest
-
-# Production (with env vars)
-docker run -p 3000:3000 \
-  -e NEXT_PUBLIC_BACKEND_API_URL=http://backend:8000/api \
-  cognee-frontend:latest
 
 # Production (detached with name)
 docker run -d --name frontend -p 3000:3000 cognee-frontend:latest
 
-# Production (with .env file)
-docker run -p 3000:3000 --env-file .env cognee-frontend:latest
+# Production (with custom port)
+docker run -p 8080:3000 -e PORT=3000 cognee-frontend:latest
 
 # Development (with hot-reload)
 docker run -p 3000:3000 -p 9229:9229 \

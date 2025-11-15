@@ -46,10 +46,21 @@ COPY types ./types
 COPY tailwindcss.config.js* ./
 COPY .env.template .
 
+# Build arguments for Next.js public environment variables
+# These are baked into the JavaScript bundle at build time
+# Override with --build-arg or by creating .env before build
+# Default to localhost for local development/testing
+ARG NEXT_PUBLIC_BACKEND_API_URL=http://localhost:8000
+ARG NEXT_PUBLIC_MCP_API_URL=http://localhost:8001
+ARG NEXT_PUBLIC_CLOUD_API_URL=http://localhost:8001
+
 # Set environment variables for build
 # Disable Next.js telemetry
 ENV NEXT_TELEMETRY_DISABLED=1 \
-    NODE_ENV=production
+    NODE_ENV=production \
+    NEXT_PUBLIC_BACKEND_API_URL=$NEXT_PUBLIC_BACKEND_API_URL \
+    NEXT_PUBLIC_MCP_API_URL=$NEXT_PUBLIC_MCP_API_URL \
+    NEXT_PUBLIC_CLOUD_API_URL=$NEXT_PUBLIC_CLOUD_API_URL
 
 # Build the Next.js application
 # This creates the optimized production build in .next folder
